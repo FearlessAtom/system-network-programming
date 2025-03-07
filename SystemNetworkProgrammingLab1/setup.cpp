@@ -21,12 +21,6 @@ int random_integer(int min, int max)
     return dis(rd);
 }
 
-int file_exists(const char* path)
-{
-    DWORD attributes = GetFileAttributesA(path);
-    return (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY));
-}
-
 int main()
 {
     HANDLE h_file = CreateFile(file_name.c_str(), GENERIC_WRITE, 0, NULL,
@@ -46,8 +40,6 @@ int main()
         result = result + std::to_string(random_integer(min, max)) + " ";
     }
 
-    std::cout << result << std::endl;
-    
     BOOL success = WriteFile(h_file, result.c_str(), (DWORD)strlen(result.c_str()) , &bytes_written, NULL);
 
     if (!success)
