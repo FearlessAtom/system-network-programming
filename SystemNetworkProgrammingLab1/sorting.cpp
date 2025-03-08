@@ -1,7 +1,6 @@
 #include <Windows.h>
 #include <fileapi.h>
 #include <iostream>
-#include <iterator>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -51,10 +50,10 @@ void output_array(int* array, int length)
 
 int main()
 {
-    HANDLE h_file = CreateFile("data.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL,
+    HANDLE h_file_reading = CreateFile("data.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL,
         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    if (h_file == INVALID_HANDLE_VALUE)
+    if (h_file_reading == INVALID_HANDLE_VALUE)
     {
         std::cerr << "Error opening the file!" << std::endl;
         return 1;
@@ -66,16 +65,16 @@ int main()
     DWORD bytes_read = 0;
 
 
-    BOOL reading_success = ReadFile(h_file, buffer, buffer_size, &bytes_read, NULL);
+    BOOL reading_success = ReadFile(h_file_reading, buffer, buffer_size, &bytes_read, NULL);
 
     if (!reading_success)
     {
         std::cerr << "Error reading the file!" << std::endl;
-        CloseHandle(h_file);
+        CloseHandle(h_file_reading);
         return 1;
     }
 
-    std::cout << "File content: " << buffer << std::endl;
+    CloseHandle(h_file_reading);
 
     char* str(buffer);
 
@@ -83,8 +82,6 @@ int main()
 
     std::string* words =  words_entry.first;
     int length = words_entry.second;
-
-    length = length - 1;
 
     std::vector<int> numbers_vector = {};
 
@@ -109,12 +106,13 @@ int main()
         }
     }
 
-
     DWORD bytes_written;
 
-    std::cout << result << std::endl;
+    HANDLE h_file_writing = CreateFile("data.dat", GENERIC_WRITE, 0, NULL,
+        CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    BOOL writing_success = WriteFile(h_file, result.c_str(), (DWORD)strlen(result.c_str()),
+
+    BOOL writing_success = WriteFile(h_file_writing, result.c_str(), (DWORD)strlen(result.c_str()),
             &bytes_written, NULL);
 
     if (!writing_success)
@@ -122,7 +120,8 @@ int main()
         std::cerr << "Error writing to the file!" << std::endl;
         return 1;
     }
-    CloseHandle(h_file);
+
+    CloseHandle(h_file_writing);
 
     return 0;
 }
