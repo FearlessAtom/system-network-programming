@@ -1,6 +1,19 @@
 #include <Windows.h>
+#include <cstring>
+#include <fileapi.h>
 #include <iostream>
-#include <utility>
+#include <minwindef.h>
+#include <winnt.h>
+#include <winuser.h>
+#include "utils.h"
+
+std::string default_file_name = "data.dat";
+char character = '*';
+int gap = 20;
+int timer_id = 1;
+int timer_interval = 500;
+
+std::string file_name;
 
 #pragma comment(lib, "gdi32")
 
@@ -8,12 +21,57 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+        case WM_CREATE:
+        {
+            file_name = default_file_name;
+
+            LPCTSTR Message = ("File " + file_name + " does not exist!").c_str();
+            LPCTSTR Title = "Error";
+            
+            if(!file_exists(file_name))
+            {
+                MessageBox(hwnd, Message, Title, MB_OK);
+                //PostQuitMessage(1);
+            }
+
+            return 0; 
+        }
+
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
+
+            HANDLE h_file = CreateFile(file_name.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL, NULL);
+
+            int* numbers;
+            int length;
+
+            file_to_numbers(h_file, numbers, length);
+           
+            //int numbers[] = {2 , 4, 1, 3, 5};
+            //int length = 5;
+
             HDC hdc = BeginPaint(hwnd, &ps);
-            TextOut(hdc, 0, 0, "Hello, world!", 13);
+
+            for (int i = 0; i < length; i++)
+            {
+                TextOut(hdc, 0, i * gap, get_characters(character, numbers[i]).c_str(), numbers[i]);
+            }
+            
+            SetTimer(hwnd, timer_id, timer_interval, NULL);
             EndPaint(hwnd, &ps);
+
+            return 0;
+        }
+
+        case WM_TIMER:
+        {
+            if (wParam == timer_id)
+            {
+                InvalidateRect(hwnd, NULL, TRUE);
+            }
+
             return 0;
         }
 
@@ -47,7 +105,7 @@ int main()
     HWND hwnd = CreateWindowEx(
             0,
             wc.lpszClassName,
-            "First Window",
+            "Window",
             WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT,
             CW_USEDEFAULT,

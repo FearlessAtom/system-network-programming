@@ -1,20 +1,13 @@
 #include <iostream>
-#include <random>
 #include <Windows.h>
 #include <string>
+#include "utils.h"
 
 int count = 30;
 int min = 10;
 int max = 100;
 
 std::string default_file_name = "data.dat";
-
-int random_integer(int min, int max)
-{
-    std::random_device rd;
-    std::uniform_int_distribution<int> dis(min, max);
-    return dis(rd);
-}
 
 int main(int argc, char* argv[])
 {
