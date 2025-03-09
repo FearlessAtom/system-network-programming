@@ -1,18 +1,13 @@
-#include <cstring>
-#include <fileapi.h>
-#include <handleapi.h>
 #include <iostream>
-#include <minwindef.h>
 #include <random>
 #include <Windows.h>
 #include <string>
-#include <winnt.h>
-
-std::string file_name = "data.dat";
 
 int count = 30;
 int min = 10;
 int max = 100;
+
+std::string default_file_name = "data.dat";
 
 int random_integer(int min, int max)
 {
@@ -21,8 +16,21 @@ int random_integer(int min, int max)
     return dis(rd);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    std::string file_name = default_file_name;
+
+    if (argc > 2)
+    {
+        std::cerr << "Usage: setup.exe [file_name]" << std::endl;
+        return 1;
+    }
+
+    if (argc == 2)
+    {
+        file_name = argv[1];
+    }
+
     HANDLE h_file = CreateFile(file_name.c_str(), GENERIC_WRITE, 0, NULL,
         CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     

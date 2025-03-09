@@ -1,20 +1,30 @@
 #include <Windows.h>
-#include <float.h>
-#include <winuser.h>
+#include <iostream>
+#include <utility>
+
+#pragma comment(lib, "gdi32")
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            TextOut(hdc, 0, 0, "Hello, world!", 13);
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+
         case WM_DESTROY:
         {
             PostQuitMessage(0);
             return 0;
         }
-
-        default:
-            return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
+
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 int main()
@@ -51,6 +61,7 @@ int main()
 
     if (hwnd == NULL)
     {
+        std::cerr << "Error creating the window!" << std::endl;
         return 1;
     }
 
@@ -58,6 +69,7 @@ int main()
     UpdateWindow(hwnd);
 
     MSG msg = {0};
+
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
