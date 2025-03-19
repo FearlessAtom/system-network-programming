@@ -116,21 +116,3 @@ std::string numbers_to_string(int* numbers, int length)
     return result;
 }
 
-int random_integer(int min, int max)
-{
-    std::random_device rd;
-    std::uniform_int_distribution<int> dis(min, max);
-    return dis(rd);
-}
-
-std::string get_characters(char character, int count)
-{
-    std::string result = "";
-
-    for (int i = 0; i < count; i++)
-    {
-        result = result + character;
-    }
-
-    return result;
-}
