@@ -36,7 +36,7 @@ int selection_sort(int* array, int length)
 
         else
         {
-            std::cerr << "Error getting a mutex!" << std::endl;
+            std::cerr << "Error locking a mutex!" << std::endl;
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -87,6 +87,12 @@ int sort_file(std::string file_name)
 int main(int argc, char* argv[])
 {
     h_mutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, "Global\\SortMutex");
+
+    if (h_mutex == NULL)
+    {
+        std::cerr << "Error getting a mutex!" << std::endl;
+        return 1;
+    }
 
     std::cout << "Press space to sort the file." << std::endl;
 

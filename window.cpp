@@ -8,7 +8,6 @@
 #include <synchapi.h>
 #include <winnt.h>
 #include <winuser.h>
-#include "utils.h"
 
 std::string file_name = "data.dat";
 char character = '*';
@@ -33,11 +32,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
-        case WM_CREATE:
-        {
-            return 0; 
-        }
-
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -51,13 +45,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 return 1;
             }
 
-            WaitForSingleObject(h_file, INFINITE);
+            WaitForSingleObject(h_mutex, INFINITE);
             int file_size = GetFileSize(h_file, NULL);
 
             HANDLE h_mapping = CreateFileMapping(h_file, NULL, PAGE_READWRITE, 0, 0, NULL);
 
             if (h_mapping == NULL)
             {
+                ReleaseMutex(h_file);
                 std::cerr << "Error creating a file mapping object!" << std::endl;
                 return 1;
             }
@@ -67,6 +62,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (!numbers)
             {
                 std::cerr << "Error mapping the file!" << std::endl;
+                CloseHandle(h_mapping);
+                ReleaseMutex(h_file);
                 return 1;
             }
 
@@ -117,6 +114,7 @@ int main()
     if (h_mutex == NULL)
     {
         std::cerr << "Error creating a mutex!" << std::endl;
+        return 1;
     }
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -151,7 +149,7 @@ int main()
 
     if (hwnd == NULL)
     {
-        std::cerr << "Error creating the window!" << std::endl;
+        std::cerr << "Error  creating a window!" << std::endl;
         return 1;
     }
 
@@ -165,7 +163,6 @@ int main()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
 
     return 0;
 }
