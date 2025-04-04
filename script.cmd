@@ -2,7 +2,7 @@
 
 setlocal enabledelayedexpansion
 
-set temporary_file="temporary.tmp"
+set email_file_path="email.txt"
 set ntp_server="pool.ntp.org"
 
 set log_file_path=%1
@@ -11,7 +11,7 @@ set process_to_kill=%3
 set archive_path=%4
 
 if "%log_file_path%"=="" (
-    echo "Usage: <log_file_name> [base_path] [process_to_kill]"
+    echo "Usage: <log_file_name> [base_path] [process_to_kill] [archive_folder]"
     exit /b
 )
 
@@ -30,7 +30,7 @@ if defined process_to_kill (
         call :add_log "Process %process_to_kill% was successfully killed!"
     ) else (
         if !ERRORLEVEL! == 128 (
-            call :add_log "Process %process_to_kill% was not found!"
+            call :add_log "Process %process_to_kill% was not found^^^!"
         )
     )
 )
@@ -61,6 +61,20 @@ if defined base_path (
     )
 )
 
+for /f %%a in ('powershell -nologo -noprofile -command "[datetime]::Today.AddDays(-1).ToString('MM.dd.yyyy')"') do set YESTERDAY=%%a
+
+set found=false
+
+for %%F in (%YESTERDAY%*) do (  
+    set found=true
+)
+
+if "!found!"=="false" (
+    call :send_email "No archives found for %YESTERDAY%^^^!"
+
+    call :add_log "An email was send to the admin notifying him that there are no archive backups for the previous day: %YESTERDAY%"
+)
+
 exit /b
 
 :: functions
@@ -78,5 +92,17 @@ if not "%~1" == "" (
 if not "%~2" == "" (
     echo %~2 >> "%log_file_path%"
 )
+
+goto :EOF
+
+:send_email
+
+if not exist "%email_file_path%" (
+    break>%email_file_path%
+)
+
+echo %~1 >> %email_file_path%
+echo Sent: %date%%time% >> %email_file_path%
+echo. >> %email_file_path%
 
 goto :EOF
