@@ -46,7 +46,7 @@ if defined base_path (
 
         set /a files_deleted=!file_count_before!-!file_count_after!
         
-        call :add_log "Temporary files deleted: !files_deleted!"
+        call :add_log "Temporary files deleted: !files_deleted!."
 
         if exist %archive_path% (
             set datetime="%date%_%time%.zip"
@@ -83,7 +83,7 @@ for /f %%A in ('dir /b /a-d "%archive_path%" ^| find /c /v ""') do set "file_cou
 forfiles /p "%archive_path%" /m *.zip /d 30 /c "cmd /c del /q @path" > NUL 2>&1
 
 if errorlevel 1 (
-    call :add_log No old archives found.
+    call :add_log "No old archives found."
 ) else (
     set /a files_deleted=!file_count_before!-!file_count_after!
     call :add_log "Old archives deleted: !files_deleted!."
@@ -91,6 +91,14 @@ if errorlevel 1 (
 
 for /f %%A in ('dir /b /a-d "%archive_path%" ^| find /c /v ""') do set "file_count_after=%%A"
 
+ping google.com > NUL 2>&1
+
+if errorlevel 1 (
+    call :add_log "No internet connection^^^!!!"
+) else (
+    call :add_log "Internet is available."
+)
+ 
 exit /b
 
 :: functions
