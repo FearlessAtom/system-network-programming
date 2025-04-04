@@ -65,7 +65,7 @@ for /f %%a in ('powershell -nologo -noprofile -command "[datetime]::Today.AddDay
 
 set found=false
 
-for %%F in (%YESTERDAY%*) do (  
+for %%F in (!archive_path!%YESTERDAY%*) do (
     set found=true
 )
 
@@ -74,6 +74,22 @@ if "!found!"=="false" (
 
     call :add_log "An email was send to the admin notifying him that there are no archive backups for the previous day: %YESTERDAY%"
 )
+
+set file_count_before=0
+set file_count_after=0
+
+for /f %%A in ('dir /b /a-d "%archive_path%" ^| find /c /v ""') do set "file_count_before=%%A"
+
+forfiles /p "%archive_path%" /m *.zip /d 30 /c "cmd /c del /q @path" > NUL 2>&1
+
+if errorlevel 1 (
+    call :add_log No old archives found.
+) else (
+    set /a files_deleted=!file_count_before!-!file_count_after!
+    call :add_log "Old archives deleted: !files_deleted!."
+)
+
+for /f %%A in ('dir /b /a-d "%archive_path%" ^| find /c /v ""') do set "file_count_after=%%A"
 
 exit /b
 
