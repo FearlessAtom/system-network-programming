@@ -9,9 +9,10 @@ set log_file_path=%1
 set base_path=%2
 set process_to_kill=%3
 set archive_path=%4
+set computer_ip=%5
 
 if "%log_file_path%"=="" (
-    echo "Usage: <log_file_name> [base_path] [process_to_kill] [archive_folder]"
+    echo "Usage: <log_file_name> [base_path] [process_to_kill] [archive_folder] [computer_ip]"
     exit /b
 )
 
@@ -99,6 +100,18 @@ if errorlevel 1 (
     call :add_log "Internet is available."
 )
  
+ping -n 1 %computer_ip% > NUL
+
+if %ERRORLEVEL%==0 (
+    call :add_log "%computer_ip% is online. Attempting shutdown..."
+
+    shutdown /s /f /m \\%computer_ip% /t 0
+
+    call :add_log "Shutdown command sent to %computer_ip%"
+) else (
+    call :add_log "%computer_ip% is not reachable^^^!"
+)
+
 exit /b
 
 :: functions
