@@ -102,12 +102,16 @@ if errorlevel 1 (
  
 ping -n 1 %computer_ip% > NUL
 
-if %ERRORLEVEL%==0 (
+if !ERRORLEVEL!==0 (
     call :add_log "%computer_ip% is online. Attempting shutdown..."
 
     shutdown /s /f /m \\%computer_ip% /t 0
 
-    call :add_log "Shutdown command sent to %computer_ip%"
+    if !ERRORLEVEL!==0 (
+        call :add_log "Shutdown command sent to %computer_ip%"
+    ) else (
+        call :add_log "%computer_ip% cannot be shutdown^^^!"
+    )
 ) else (
     call :add_log "%computer_ip% is not reachable^^^!"
 )
