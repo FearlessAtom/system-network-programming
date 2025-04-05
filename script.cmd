@@ -116,6 +116,9 @@ if !ERRORLEVEL!==0 (
     call :add_log "%computer_ip% is not reachable^^^!"
 )
 
+call :add_log "IP addresses"
+arp -a >> %log_file_path%
+
 exit /b
 
 :: functions
