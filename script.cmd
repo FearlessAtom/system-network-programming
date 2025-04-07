@@ -11,9 +11,10 @@ set base_path=%2
 set process_to_kill=%3
 set archive_path=%4
 set computer_ip=%5
+set max_log_file_size=%6
 
 if "%log_file_path%"=="" (
-    echo "Usage: <log_file_name> [base_path] [process_to_kill] [archive_folder] [computer_ip]"
+    echo "Usage: <log_file_name> [base_path] [process_to_kill] [archive_folder] [computer_ip] [max_log_file_size]"
     exit /b
 )
 
@@ -127,12 +128,23 @@ if exist ipon.txt (
         if !ERRORLEVEL! == 1 (
             call :add_log "Ip %%i from the file "ipon.txt" is not reachable^^^!"
             call :send_email "Ip %%i from the file "ipon.txt" is not reachable^^^!"
-            goto :after_ipon_forloop
+            goto :after_ipon_for_loop
         )
     )
 )
 
-:after_ipon_forloop
+:after_ipon_for_loop
+
+if defined max_log_file_size (
+    for %%f in ( lab.log ) do (
+        set "filesize=%%~zf"
+    )
+)
+
+if !filesize! GTR !max_log_file_size! (
+    call :send_email "The log file is too large^^^! !filesize! bytes."
+    call :add_log "The log file is too large^^^! !filesize! bytes."
+)
 
 exit /b
 
