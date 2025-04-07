@@ -3,6 +3,7 @@
 setlocal enabledelayedexpansion
 
 set email_file_path="email.txt"
+set ipon_file_path="ipon.txt"
 set ntp_server="pool.ntp.org"
 
 set log_file_path=%1
@@ -92,14 +93,14 @@ if errorlevel 1 (
 
 for /f %%A in ('dir /b /a-d "%archive_path%" ^| find /c /v ""') do set "file_count_after=%%A"
 
-ping google.com > NUL 2>&1
+ping -n 1 google.com > NUL 2>&1
 
 if errorlevel 1 (
     call :add_log "No internet connection^^^!!!"
 ) else (
     call :add_log "Internet is available."
 )
- 
+
 ping -n 1 %computer_ip% > NUL
 
 if !ERRORLEVEL!==0 (
@@ -116,8 +117,22 @@ if !ERRORLEVEL!==0 (
     call :add_log "%computer_ip% is not reachable^^^!"
 )
 
-call :add_log "IP addresses"
+call :add_log "IP addresses:"
 arp -a >> %log_file_path%
+
+if exist ipon.txt (
+    for /f "usebackq tokens=* delims=" %%i in ( !ipon_file_path! ) do (
+        ping -n 1 %%i > NUL 2>&1
+
+        if !ERRORLEVEL! == 1 (
+            call :add_log "Ip %%i from the file "ipon.txt" is not reachable^^^!"
+            call :send_email "Ip %%i from the file "ipon.txt" is not reachable^^^!"
+            goto :after_ipon_forloop
+        )
+    )
+)
+
+:after_ipon_forloop
 
 exit /b
 
