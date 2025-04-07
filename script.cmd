@@ -1,5 +1,7 @@
 @echo off
 
+chcp 65001 > NUL
+
 setlocal enabledelayedexpansion
 
 set email_file_path="email.txt"
@@ -144,6 +146,12 @@ if defined max_log_file_size (
 if !filesize! GTR !max_log_file_size! (
     call :send_email "The log file is too large^^^! !filesize! bytes."
     call :add_log "The log file is too large^^^! !filesize! bytes."
+)
+
+for /f "tokens=1" %%a in ('wmic logicaldisk get caption ^| find ":"') do (
+    call :add_log "Drive %%a:"
+    fsutil volume diskfree %%a >> %log_file_path%
+    echo. >> %log_file_path%
 )
 
 exit /b
