@@ -154,10 +154,10 @@ for /f "tokens=1" %%a in ('wmic logicaldisk get caption ^| find ":"') do (
     echo. >> %log_file_path%
 )
 
-set systeminfo_file_name="%date%_%time%.txt"
+set systeminfo_file_name="%date%_%time%"
 set systeminfo_file_name=!systeminfo_file_name::=-! 
 
-systeminfo > "!systeminfo_file_name!.txt" 2>&1
+systeminfo > "!systeminfo_file_name: =!.txt" 2>&1
 
 exit /b
 
