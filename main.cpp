@@ -1,3 +1,5 @@
+#include <Shlwapi.h>
+#include <experimental/filesystem>
 #include <lmcons.h>
 #include <iterator>
 #include <processenv.h>
@@ -58,12 +60,17 @@ void monitor_directory_changes()
         NULL
     );
 
+    if (!PathFileExistsW(directory_path.c_str()))
+    {
+        CreateDirectoryW(directory_path.c_str(), NULL);
+    }
+
     HANDLE directory_handle = CreateFileW(
         directory_path.c_str(),
         FILE_LIST_DIRECTORY,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         NULL,
-        OPEN_ALWAYS,
+        OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS,
         NULL
     );
