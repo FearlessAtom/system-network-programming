@@ -28,6 +28,23 @@ std::wstring percentage_formatter(double value)
     return out.str();
 }
 
+std::wstring get_drive_type_wstring(std::wstring volume_root)
+{
+    int drive_type = GetDriveTypeW(volume_root.c_str());
+
+    switch (drive_type)
+    {
+        case 0: return L"Unknown";
+        case 1: return L"Invalid";
+        case 2: return L"Removable";
+        case 3: return L"Fixed";
+        case 4: return L"Remote";
+        case 5: return L"CD-ROM";
+    }
+
+    throw std::invalid_argument("Invalid drive type!");
+}
+
 std::wstring human_readble_bytes(uint64_t bytes)
 {
     const wchar_t* suffixes[] = { L"B", L"KB", L"MB", L"GB", L"TB", L"PB" };
@@ -45,7 +62,7 @@ std::wstring human_readble_bytes(uint64_t bytes)
     return out.str();
 }
 
-void get_disk_information(std::wstring volume_root, std::vector<std::wstring>& lines, std::wstring space_indent=L"")
+void get_volume_information(std::wstring volume_root, std::vector<std::wstring>& lines, std::wstring space_indent=L"")
 {
     wchar_t volume_name_buffer[MAX_PATH + 1] = {  };
     DWORD volume_serial_number;
@@ -82,21 +99,24 @@ void get_storage_information(std::wstring volume_root, std::vector<std::wstring>
     }
 }
 
-std::wstring get_drive_type_wstring(std::wstring volume_root)
+void get_drive_information(std::vector<std::wstring>& lines)
 {
-    int drive_type = GetDriveTypeW(volume_root.c_str());
+    DWORD drives = GetLogicalDrives();
 
-    switch (drive_type)
+    for (int i = 0; i < 26; i++)
     {
-        case 0: return L"Unknown";
-        case 1: return L"Invalid";
-        case 2: return L"Removable";
-        case 3: return L"Fixed";
-        case 4: return L"Remote";
-        case 5: return L"CD-ROM";
-    }
+        if (drives & (1 << i))
+        {
+            char disk_letter = char('A' + i);
 
-    throw std::invalid_argument("Invalid drive type!");
+            std::wstring volume_root = std::wstring(1, disk_letter) + L":\\";
+
+            lines.push_back(std::wstring(1, disk_letter) + L":\\ - " + get_drive_type_wstring(volume_root));
+
+            get_volume_information(volume_root, lines, space_indent);
+            get_storage_information(volume_root, lines, space_indent);
+        }
+    }
 }
 
 void render(HDC window_handle, std::vector<std::wstring> lines)
@@ -119,26 +139,11 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
             HDC panting_handle = BeginPaint(hwnd, &paint_struct);
 
-            DWORD drives = GetLogicalDrives();
-
             std::vector<std::wstring> lines = std::vector<std::wstring>();
 
-            for (int i = 0; i < 26; i++)
-            {
-                if (drives & (1 << i))
-                {
-                    char disk_letter = char('A' + i);
+            get_drive_information(lines);
 
-                    std::wstring volume_root = std::wstring(1, disk_letter) + L":\\";
-
-                    lines.push_back(std::wstring(1, disk_letter) + L":\\ - " + get_drive_type_wstring(volume_root));
-
-                    get_disk_information(volume_root, lines, space_indent);
-                    get_storage_information(volume_root, lines, space_indent);
-                }
-            }
-
-            render(panting_handle,  lines);
+            render(panting_handle, lines);
 
             EndPaint(hwnd, &paint_struct);
 
