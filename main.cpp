@@ -46,7 +46,6 @@ std::wstring get_time_wstring()
     return time_stream.str();
 }
 
-
 void monitor_directory_changes()
 {
     HANDLE log_file_handle = CreateFileW(
@@ -64,7 +63,7 @@ void monitor_directory_changes()
         FILE_LIST_DIRECTORY,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         NULL,
-        OPEN_EXISTING,
+        OPEN_ALWAYS,
         FILE_FLAG_BACKUP_SEMANTICS,
         NULL
     );
