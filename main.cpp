@@ -1,5 +1,7 @@
+#include <exception>
 #include <lmcons.h>
 #include <iterator>
+#include <processenv.h>
 #include <sysinfoapi.h>
 #include <cstdint>
 #include <errhandlingapi.h>
@@ -48,9 +50,46 @@ std::wstring format_memory(ULONGLONG bytes)
     return out.str();
 }
 
+void get_system_directory_path(std::vector<std::wstring>& lines)
+{
+    wchar_t system_directory[MAX_PATH + 1];
+    DWORD system_directory_size = sizeof(system_directory) / sizeof(system_directory[0]);
+
+    GetSystemDirectoryW(system_directory, system_directory_size);
+
+    lines.push_back(L"System directory: " + std::wstring(system_directory));
+}
+
+void get_temporary_directory_path(std::vector<std::wstring>& lines)
+{
+    wchar_t temporary_directory[MAX_PATH + 1];
+    DWORD temporary_directory_size = sizeof(temporary_directory) / sizeof(temporary_directory[0]);
+
+    GetTempPathW(temporary_directory_size, temporary_directory);
+
+    lines.push_back(L"Temporary directory: " + std::wstring(temporary_directory));
+}
+
+void get_current_directory_path(std::vector<std::wstring>& lines)
+{
+    wchar_t current_directory[MAX_PATH + 1];
+    DWORD current_directory_size = sizeof(current_directory) / sizeof(current_directory[0]);
+
+    GetCurrentDirectoryW(current_directory_size, current_directory);
+
+    lines.push_back(L"Current directory: " + std::wstring(current_directory));
+}
+
+void get_directory_paths(std::vector<std::wstring>& lines)
+{
+    get_system_directory_path(lines);
+    get_temporary_directory_path(lines);
+    get_current_directory_path(lines);
+}
+
 void get_computer_name(std::vector<std::wstring>& lines)
 {
-    wchar_t computer_name[256];
+    wchar_t computer_name[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD computer_name_size = sizeof(computer_name) / sizeof(computer_name[0]);
 
     GetComputerNameExW(ComputerNameDnsHostname, computer_name, &computer_name_size);
@@ -202,6 +241,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
             get_memory_information(lines);
             get_computer_name(lines);
             get_user_name(lines);
+            get_directory_paths(lines);
             
             render(panting_handle, lines);
 
