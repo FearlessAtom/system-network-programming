@@ -1,3 +1,6 @@
+#include <lmcons.h>
+#include <iterator>
+#include <sysinfoapi.h>
 #include <cstdint>
 #include <errhandlingapi.h>
 #include <fileapi.h>
@@ -14,6 +17,8 @@
 #include <wingdi.h>
 #include <winnt.h>
 #include <winuser.h>
+#include <windows.h>
+#include <string>
 
 std::wstring space_indent = L"        ";
 
@@ -26,6 +31,41 @@ std::wstring percentage_formatter(double value)
     out << std::fixed << std::setprecision(2) << percent << L"%";
     
     return out.str();
+}
+
+std::wstring format_memory(ULONGLONG bytes)
+{
+    const double GB = 1024.0 * 1024.0 * 1024.0;
+    const double MB = 1024.0 * 1024.0;
+
+    std::wostringstream out;
+
+    out << std::fixed << std::setprecision(2);
+
+    if (bytes >= GB) out << (bytes / GB) << L"GB";
+    else out << (bytes / MB) << L"MB";
+
+    return out.str();
+}
+
+void get_computer_name(std::vector<std::wstring>& lines)
+{
+    wchar_t computer_name[256];
+    DWORD computer_name_size = sizeof(computer_name) / sizeof(computer_name[0]);
+
+    GetComputerNameExW(ComputerNameDnsHostname, computer_name, &computer_name_size);
+
+    lines.push_back(L"Computer name: " + std::wstring(computer_name));
+}
+
+void get_user_name(std::vector<std::wstring>& lines)
+{
+    wchar_t user_name[UNLEN + 1];
+    DWORD user_name_size = sizeof(user_name) / sizeof(user_name[0]);
+
+    GetUserNameW(user_name, &user_name_size);
+
+    lines.push_back(L"User name: " + std::wstring(user_name));
 }
 
 std::wstring get_drive_type_wstring(std::wstring volume_root)
@@ -119,6 +159,20 @@ void get_drive_information(std::vector<std::wstring>& lines)
     }
 }
 
+void get_memory_information(std::vector<std::wstring>& lines)
+{
+    MEMORYSTATUSEX memory_struct;
+    memory_struct.dwLength = sizeof(memory_struct);
+
+    if (GlobalMemoryStatusEx(&memory_struct))
+    {
+        lines.push_back(L"Memory: Total: " + format_memory(memory_struct.ullTotalPhys) + 
+            L", Free: " + format_memory(memory_struct.ullAvailPhys) + 
+            L", Used: " + format_memory(memory_struct.ullTotalPhys - memory_struct.ullAvailPhys) +
+            L", Usage: " + std::to_wstring(memory_struct.dwMemoryLoad) + L"%");
+    }
+}
+
 void render(HDC window_handle, std::vector<std::wstring> lines)
 {
     int gap_indent = 20;
@@ -143,6 +197,12 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
             get_drive_information(lines);
 
+            lines.push_back(L"");
+
+            get_memory_information(lines);
+            get_computer_name(lines);
+            get_user_name(lines);
+            
             render(panting_handle, lines);
 
             EndPaint(hwnd, &paint_struct);
