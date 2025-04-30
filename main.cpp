@@ -1,4 +1,3 @@
-#include <exception>
 #include <lmcons.h>
 #include <iterator>
 #include <processenv.h>
@@ -23,6 +22,8 @@
 #include <string>
 
 std::wstring space_indent = L"        ";
+int timer_interval = 100;
+int timer_id = 1;
 
 std::wstring percentage_formatter(double value)
 {
@@ -212,13 +213,13 @@ void get_memory_information(std::vector<std::wstring>& lines)
     }
 }
 
-void render(HDC window_handle, std::vector<std::wstring> lines)
+void render(HDC painting_handle, std::vector<std::wstring> lines)
 {
     int gap_indent = 20;
 
     for (int i = 0; i < lines.size(); i++)
     {
-        TextOutW(window_handle, 0, gap_indent * i, lines[i].c_str(), lines[i].length());
+        TextOutW(painting_handle, 0, gap_indent * i, lines[i].c_str(), lines[i].length());
     }
 }
 
@@ -230,7 +231,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         {
             PAINTSTRUCT paint_struct;
 
-            HDC panting_handle = BeginPaint(hwnd, &paint_struct);
+            HDC painting_handle = BeginPaint(hwnd, &paint_struct);
 
             std::vector<std::wstring> lines = std::vector<std::wstring>();
 
@@ -243,12 +244,19 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
             get_user_name(lines);
             get_directory_paths(lines);
             
-            render(panting_handle, lines);
+            render(painting_handle, lines);
+
 
             EndPaint(hwnd, &paint_struct);
 
+            SetTimer(hwnd, timer_id, timer_interval, NULL);
+
             return 0;
         }
+
+        case WM_TIMER:
+            InvalidateRect(hwnd, NULL, true);
+            return 0;
 
         case WM_DESTROY:
         {
