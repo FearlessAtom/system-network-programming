@@ -255,7 +255,8 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         }
 
         case WM_TIMER:
-            InvalidateRect(hwnd, NULL, true);
+            if (wParam == timer_id) InvalidateRect(hwnd, NULL, true);
+
             return 0;
 
         case WM_DESTROY:
