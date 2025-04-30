@@ -12,6 +12,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 #include <windef.h>
 #include <iostream>
@@ -24,6 +25,122 @@
 std::wstring space_indent = L"        ";
 int timer_interval = 100;
 int timer_id = 1;
+
+std::wstring directory_path = L"C:\\Users\\357\\Desktop\\Projects\\system-network-programming\\target_folder";
+std::wstring log_file_path = L"./lab.log";
+
+std::wstring get_time_wstring()
+{
+    SYSTEMTIME time;
+    GetLocalTime(&time);
+
+    std::wstringstream time_stream;
+
+    time_stream << std::setw(4) << std::setfill(L'0') << time.wYear << L"-"
+        << std::setw(2) << std::setfill(L'0') << time.wMonth << L"-"
+        << std::setw(2) << std::setfill(L'0') << time.wDay << L" "
+        << std::setw(2) << std::setfill(L'0') << time.wHour << L":"
+        << std::setw(2) << std::setfill(L'0') << time.wMinute << L":"
+        << std::setw(2) << std::setfill(L'0') << time.wSecond;
+
+    return time_stream.str();
+}
+
+
+void monitor_directory_changes()
+{
+    HANDLE log_file_handle = CreateFileW(
+        log_file_path.c_str(),
+        GENERIC_WRITE,
+        FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
+        NULL,
+        OPEN_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    HANDLE directory_handle = CreateFileW(
+        directory_path.c_str(),
+        FILE_LIST_DIRECTORY,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS,
+        NULL
+    );
+
+    if (directory_handle == INVALID_HANDLE_VALUE)
+    {
+        std::cerr << "Failed to open the directory for watching!" << std::endl;
+        return;
+    }
+
+    char buffer[256];
+    DWORD bytes_returned;
+
+    while (true)
+    {
+        if (ReadDirectoryChangesW(directory_handle,
+            &buffer,
+            sizeof(buffer),
+            TRUE,
+            FILE_NOTIFY_CHANGE_FILE_NAME |
+            FILE_NOTIFY_CHANGE_DIR_NAME |
+            FILE_NOTIFY_CHANGE_ATTRIBUTES |
+            FILE_NOTIFY_CHANGE_SIZE |
+            FILE_NOTIFY_CHANGE_LAST_WRITE |
+            FILE_NOTIFY_CHANGE_LAST_WRITE |
+            FILE_NOTIFY_CHANGE_LAST_ACCESS |
+            FILE_NOTIFY_CHANGE_CREATION |
+            FILE_NOTIFY_CHANGE_SECURITY,
+            &bytes_returned,
+            NULL,
+            NULL))
+        {
+            FILE_NOTIFY_INFORMATION* information = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(buffer);
+
+            while (true)
+            {
+                std::wstring filename(information->FileName, information->FileNameLength / sizeof(WCHAR));
+                std::wstring action;
+
+                switch (information->Action)
+                {
+                    case FILE_ACTION_ADDED: action = L"Added"; break;
+                    case FILE_ACTION_REMOVED: action = L"Removed"; break;
+                    case FILE_ACTION_MODIFIED: action = L"Modified"; break;
+                    case FILE_ACTION_RENAMED_OLD_NAME: action = L"Renamed from"; break;
+                    case FILE_ACTION_RENAMED_NEW_NAME: action = L"Renamed to"; break;
+                    default: action = L"Unkown action"; break;
+                }
+
+                std::wstring text = L"[" + get_time_wstring() + L"] " + std::wstring(action) + L" - " +
+                    std::wstring(filename) + L"\n";
+
+                DWORD bytes_written;
+
+                SetFilePointer(log_file_handle, 0, NULL, FILE_END);
+
+                WriteFile(
+                    log_file_handle,
+                    text.c_str(),
+                    text.length() * sizeof(wchar_t),
+                    &bytes_written,
+                    NULL
+                );
+
+                if (information->NextEntryOffset == 0) break;
+
+                information = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(
+                    reinterpret_cast<BYTE*>(information) + information->NextEntryOffset
+                );
+            }
+        }
+    }
+
+    CloseHandle(log_file_handle);
+    CloseHandle(directory_handle);
+}
 
 std::wstring percentage_formatter(double value)
 {
@@ -246,7 +363,6 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
             
             render(painting_handle, lines);
 
-
             EndPaint(hwnd, &paint_struct);
 
             SetTimer(hwnd, timer_id, timer_interval, NULL);
@@ -271,6 +387,8 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 int main()
 {
+    std::thread monitor_thread(monitor_directory_changes);
+
     std::string class_name = "MainWindow";
 
     HINSTANCE handle = GetModuleHandle(NULL);
@@ -312,6 +430,11 @@ int main()
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
+
+    CloseHandle(window_handle);
+    UnregisterClassW(std::wstring(class_name.begin(), class_name.end()).c_str(), handle);
+
+    monitor_thread.join();
 
     return 0;
 }
