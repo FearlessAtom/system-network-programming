@@ -1,16 +1,49 @@
+#include <cstdint>
 #include <errhandlingapi.h>
 #include <fileapi.h>
+#include <iomanip>
+#include <ios>
 #include <minwindef.h>
+#include <ostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <vector>
 #include <windef.h>
 #include <iostream>
 #include <wingdi.h>
+#include <winnt.h>
 #include <winuser.h>
 
 std::wstring space_indent = L"        ";
+
+std::wstring percentage_formatter(double value)
+{
+    double percent = value * 100;
+
+    std::wostringstream out;
+
+    out << std::fixed << std::setprecision(2) << percent << L"%";
+    
+    return out.str();
+}
+
+std::wstring human_readble_bytes(uint64_t bytes)
+{
+    const wchar_t* suffixes[] = { L"B", L"KB", L"MB", L"GB", L"TB", L"PB" };
+    int i = 0;
+    double count = static_cast<double>(bytes);
+
+    while (count >= 1024 && i < std::size(suffixes) - 1)
+    {
+        count /= 1024.0;
+        ++i;
+    }
+
+    std::wostringstream out;
+    out << std::fixed << std::setprecision(2) << count << L" " << suffixes[i];
+    return out.str();
+}
 
 std::wstring get_drive_type_wstring(int type)
 {
@@ -73,6 +106,25 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
                             std::wstring((volume_name_buffer[0] ? volume_name_buffer : L"<NONE>"))+ L", File system: " +
                             std::wstring((file_system_name_buffer[0] ? file_system_name_buffer : L"<NONE>")) +
                             L", Serial number: " + std::to_wstring(volume_serial_number));
+                    }
+
+                    DWORD sectors_per_cluster;
+                    DWORD bytes_per_sector;
+                    DWORD number_of_free_clusters;
+                    DWORD total_number_of_clusters;
+
+                    if (GetDiskFreeSpaceW(volume_root.c_str(), &sectors_per_cluster,
+                        &bytes_per_sector, &number_of_free_clusters, &total_number_of_clusters))
+                    {
+                        uint64_t total_bytes = static_cast<uint64_t>(total_number_of_clusters) * sectors_per_cluster * bytes_per_sector;
+                        uint64_t free_bytes = static_cast<uint64_t>(number_of_free_clusters) * sectors_per_cluster * bytes_per_sector;
+                        uint64_t used_bytes = total_bytes - free_bytes;
+
+                        lines.push_back(space_indent + L"Disk space:" +
+                            L"Total: " + human_readble_bytes(total_bytes) + L", " + 
+                            L"Free: " + human_readble_bytes(free_bytes) + L", " +
+                            L"Used: " + human_readble_bytes(used_bytes) + L", " +
+                            L"Usage: " + percentage_formatter(static_cast<double>(used_bytes) / total_bytes));
                     }
                 }
             }
