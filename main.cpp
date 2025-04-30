@@ -45,9 +45,48 @@ std::wstring human_readble_bytes(uint64_t bytes)
     return out.str();
 }
 
-std::wstring get_drive_type_wstring(int type)
+void get_disk_information(std::wstring volume_root, std::vector<std::wstring>& lines, std::wstring space_indent=L"")
 {
-    switch (type)
+    wchar_t volume_name_buffer[MAX_PATH + 1] = {  };
+    DWORD volume_serial_number;
+    wchar_t file_system_name_buffer[MAX_PATH + 1] = {  };
+
+    if (GetVolumeInformationW(volume_root.c_str(), volume_name_buffer, sizeof(volume_name_buffer), &volume_serial_number, NULL, NULL, file_system_name_buffer, sizeof(file_system_name_buffer)))
+    {
+        lines.push_back(space_indent +
+            L"Volume name: " + std::wstring((volume_name_buffer[0] ? volume_name_buffer : L"<NONE>")) +
+            L", File system: " + std::wstring((file_system_name_buffer[0] ? file_system_name_buffer : L"<NONE>")) +
+            L", Serial number: " + std::to_wstring(volume_serial_number));
+    }
+}
+
+void get_storage_information(std::wstring volume_root, std::vector<std::wstring>& lines, std::wstring space_indent=L"")
+{
+    DWORD sectors_per_cluster;
+    DWORD bytes_per_sector;
+    DWORD number_of_free_clusters;
+    DWORD total_number_of_clusters;
+
+    if (GetDiskFreeSpaceW(volume_root.c_str(), &sectors_per_cluster,
+        &bytes_per_sector, &number_of_free_clusters, &total_number_of_clusters))
+    {
+        uint64_t total_bytes = static_cast<uint64_t>(total_number_of_clusters) * sectors_per_cluster * bytes_per_sector;
+        uint64_t free_bytes = static_cast<uint64_t>(number_of_free_clusters) * sectors_per_cluster * bytes_per_sector;
+        uint64_t used_bytes = total_bytes - free_bytes;
+
+        lines.push_back(space_indent + L"Disk space:" +
+            L"Total: " + human_readble_bytes(total_bytes) + L", " + 
+            L"Free: " + human_readble_bytes(free_bytes) + L", " +
+            L"Used: " + human_readble_bytes(used_bytes) + L", " +
+            L"Usage: " + percentage_formatter(static_cast<double>(used_bytes) / total_bytes));
+    }
+}
+
+std::wstring get_drive_type_wstring(std::wstring volume_root)
+{
+    int drive_type = GetDriveTypeW(volume_root.c_str());
+
+    switch (drive_type)
     {
         case 0: return L"Unknown";
         case 1: return L"Invalid";
@@ -92,40 +131,10 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
                     std::wstring volume_root = std::wstring(1, disk_letter) + L":\\";
 
-                    int drive_type = GetDriveTypeW(volume_root.c_str());
+                    lines.push_back(std::wstring(1, disk_letter) + L":\\ - " + get_drive_type_wstring(volume_root));
 
-                    lines.push_back(std::wstring(1, disk_letter) + L":\\ - " + get_drive_type_wstring(drive_type));
-
-                    wchar_t volume_name_buffer[MAX_PATH + 1] = {  };
-                    DWORD volume_serial_number;
-                    wchar_t file_system_name_buffer[MAX_PATH + 1] = {  };
-
-                    if (GetVolumeInformationW(volume_root.c_str(), volume_name_buffer, sizeof(volume_name_buffer), &volume_serial_number, NULL, NULL, file_system_name_buffer, sizeof(file_system_name_buffer)))
-                    {
-                        lines.push_back(space_indent + L"Volume name: " +
-                            std::wstring((volume_name_buffer[0] ? volume_name_buffer : L"<NONE>"))+ L", File system: " +
-                            std::wstring((file_system_name_buffer[0] ? file_system_name_buffer : L"<NONE>")) +
-                            L", Serial number: " + std::to_wstring(volume_serial_number));
-                    }
-
-                    DWORD sectors_per_cluster;
-                    DWORD bytes_per_sector;
-                    DWORD number_of_free_clusters;
-                    DWORD total_number_of_clusters;
-
-                    if (GetDiskFreeSpaceW(volume_root.c_str(), &sectors_per_cluster,
-                        &bytes_per_sector, &number_of_free_clusters, &total_number_of_clusters))
-                    {
-                        uint64_t total_bytes = static_cast<uint64_t>(total_number_of_clusters) * sectors_per_cluster * bytes_per_sector;
-                        uint64_t free_bytes = static_cast<uint64_t>(number_of_free_clusters) * sectors_per_cluster * bytes_per_sector;
-                        uint64_t used_bytes = total_bytes - free_bytes;
-
-                        lines.push_back(space_indent + L"Disk space:" +
-                            L"Total: " + human_readble_bytes(total_bytes) + L", " + 
-                            L"Free: " + human_readble_bytes(free_bytes) + L", " +
-                            L"Used: " + human_readble_bytes(used_bytes) + L", " +
-                            L"Usage: " + percentage_formatter(static_cast<double>(used_bytes) / total_bytes));
-                    }
+                    get_disk_information(volume_root, lines, space_indent);
+                    get_storage_information(volume_root, lines, space_indent);
                 }
             }
 
