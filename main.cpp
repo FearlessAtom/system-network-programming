@@ -6,9 +6,6 @@
 #include <winreg.h>
 #include <lmcons.h>
 
-std::string word_value = "C:\\Program Files (x86)\\Microsoft Office\\Office16\\winword.exe";
-std::string word_name = "Microsoft Word";
-
 struct value_pair
 {
     std::string name;
@@ -32,10 +29,7 @@ std::vector<value_pair> read_key(HKEY key)
 
         LONG error_code = RegEnumValueA(key, i, name, &name_size, 0, NULL, (LPBYTE)value, &value_size);
 
-        if (error_code != ERROR_SUCCESS)
-        {
-            break;
-        }
+        if (error_code != ERROR_SUCCESS) break;
 
         result.push_back({name, value});
     }
@@ -46,7 +40,6 @@ std::vector<value_pair> read_key(HKEY key)
 void output_key_values(HKEY key, std::string sign=" = ")
 {
     std::vector<value_pair> keys = read_key(key);
-
 
     for (int i = 0; i < keys.size(); i++)
     {
@@ -75,14 +68,11 @@ std::vector<std::string> read_subkeys(HKEY key)
 
         LONG error_code = RegEnumKeyEx(key, i, name, &name_size, NULL, NULL, NULL, NULL);
 
-        if (error_code == ERROR_NO_MORE_ITEMS)
-        {
-            break;
-        }
+        if (error_code == ERROR_NO_MORE_ITEMS) break;
 
         if (error_code != ERROR_SUCCESS)
         {
-            std::cerr << "Error code: " << error_code << std::endl;
+            std::cerr << "Error enumerating the subkeys. Error code: " << error_code << std::endl;
             break;
         }
 
@@ -96,10 +86,7 @@ void output_subkeys(HKEY key)
 {
     std::vector<std::string> tasks = read_subkeys(key);
 
-    if (tasks.empty())
-    {
-        std::cout << "No subkeys." << std::endl;
-    }
+    if (tasks.empty()) std::cout << "No subkeys." << std::endl;
 
     for (int i = 0; i < tasks.size(); i++)
     {
@@ -150,6 +137,9 @@ int main()
 
     std::cout << std::endl << "Startup applications for computer " << computer_name << ":" << std::endl;
     output_key_values(computer_startup_key);
+
+    std::string word_value = "C:\\Program Files (x86)\\Microsoft Office\\Office16\\winword.exe";
+    std::string word_name = "Microsoft Word";
 
     error_code = add_value(user_startup_key, word_name, word_value);
 
