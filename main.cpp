@@ -124,9 +124,9 @@ int main()
         return 1;
     }
 
-    HKEY computer_key;
+    HKEY computer_startup_key;
 
-    error_code = RegCreateKeyA(HKEY_LOCAL_MACHINE, startup_sub_key.c_str(), &computer_key);
+    error_code = RegCreateKeyA(HKEY_LOCAL_MACHINE, startup_sub_key.c_str(), &computer_startup_key);
 
     if (error_code != ERROR_SUCCESS)
     {
@@ -149,14 +149,11 @@ int main()
     GetComputerNameA(computer_name, &computer_name_size);
 
     std::cout << std::endl << "Startup applications for computer " << computer_name << ":" << std::endl;
-    output_key_values(computer_key);
+    output_key_values(computer_startup_key);
 
     error_code = add_value(user_startup_key, word_name, word_value);
 
-    if (error_code != ERROR_SUCCESS)
-    {
-        std::cerr << "Error adding Microsoft Word to startup. Error code: " << error_code << std::endl;
-    }
+    if (error_code != ERROR_SUCCESS) std::cerr << "Error adding Microsoft Word to startup. Error code: " << error_code << std::endl;
 
     std::cout << std::endl << "Startup applications for " << user_name << " after adding Microsoft Word to startup:" << std::endl;
     output_key_values(user_startup_key);
@@ -168,22 +165,37 @@ int main()
     HKEY opened_computer_tasks_key;
 
     error_code = RegCreateKeyA(HKEY_CURRENT_USER, tasks_sub_key.c_str(), &user_tasks_key);
+    if (error_code != ERROR_SUCCESS) std::cerr << "Error creating a tasks user key. Error code: " << error_code << std::endl;
+
     error_code = RegOpenKeyExW(user_tasks_key, NULL, KEY_ENUMERATE_SUB_KEYS, KEY_READ, &opened_user_tasks_key);
+    if (error_code != ERROR_SUCCESS) std::cerr << "Error openining a tasks user key. Error code: " << error_code << std::endl;
 
     error_code = RegCreateKeyA(HKEY_LOCAL_MACHINE, tasks_sub_key.c_str(), &computer_tasks_key);
-    error_code = RegOpenKeyExW(computer_tasks_key, NULL, KEY_ENUMERATE_SUB_KEYS, KEY_READ, &opened_computer_tasks_key);
+    if (error_code != ERROR_SUCCESS) std::cerr << "Error creating a tasks computer key. Error code: " << error_code << std::endl;
 
-    if (error_code != ERROR_SUCCESS)
-    {
-        std::cerr << "Error code: " << error_code << std::endl;
-    }
+    error_code = RegOpenKeyExW(computer_tasks_key, NULL, KEY_ENUMERATE_SUB_KEYS, KEY_READ, &opened_computer_tasks_key);
+    if (error_code != ERROR_SUCCESS) std::cerr << "Error openining a tasks computer key. Error code: " << error_code << std::endl;
 
     std::cout << std::endl << "Registered tasks for user " << user_name << ":" << std::endl;
     output_subkeys(opened_user_tasks_key);
 
-
     std::cout << std::endl << "Registered tasks for computer " << computer_name << ":" << std::endl;
     output_subkeys(opened_computer_tasks_key);
+
+    std::string backup_destination = "C:\\Users\\357\\Desktop\\backup.reg";
+    std::string backup_registry = "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+    std::string backup_command = "reg export  " + backup_registry + " " + backup_destination;
+
+    system(backup_command.c_str());
+
+    RegCloseKey(user_startup_key);
+    RegCloseKey(computer_startup_key);
+    RegCloseKey(computer_startup_key);
+    RegCloseKey(user_tasks_key);
+    RegCloseKey(computer_tasks_key);
+    RegCloseKey(opened_user_tasks_key);
+    RegCloseKey(opened_computer_tasks_key);
 
     return 0;
 }
