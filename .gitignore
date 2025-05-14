@@ -1,5 +1,7 @@
 *.exe
 *.exp
-*.dll
 *.obj
 *.lib
+
+*.dll
+!hello_world.dll
