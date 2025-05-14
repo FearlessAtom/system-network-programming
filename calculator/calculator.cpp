@@ -1,5 +1,8 @@
 #include "./calculator.h"
+#include <algorithm>
 #include <iostream>
+#include <thread>
+#include <vector>
 
 Calculator::Calculator()
 {
@@ -11,21 +14,43 @@ Calculator::~Calculator()
     std::cout << "Calculator instance deconstructed!" << std::endl;
 }
 
-void Calculator::sort_array(int* array, int length)
+void Calculator::sort_chunk(int* array, size_t start, size_t end)
 {
-    std::cout << "Sorting array..." << std::endl;
-
-    qsort(array, length, sizeof(int), compare);
+    qsort(array + start, end - start, sizeof(int), compare);
 }
 
 int Calculator::compare(const void* a, const void* b)
 {
-    int int_a = *((const int*)a);
-    int int_b = *((const int*)b);
+    return (*((const int*)a) - *((const int*)b));
+}
 
-    if (int_a > int_b) return 1;
-    if (int_a < int_b) return -1;
-    return 0;
+void Calculator::sort_array(int* array, int length)
+{
+    std::cout << "Sorting array..." << std::endl;
+
+    int number_of_threads = std::thread::hardware_concurrency();
+
+    std::vector<std::thread> threads;
+    size_t chunk_size = length / number_of_threads;
+
+    for (int i = 0; i < number_of_threads; i++)
+    {
+        size_t start = i * chunk_size;
+        size_t end = (i == chunk_size - 1) ? length : start + chunk_size;
+
+        threads.emplace_back(sort_chunk, array, start, end);
+    }
+
+    for (int i = 0; i < threads.size(); i++) threads[i].join();
+
+    size_t current_chunk_size = chunk_size;
+
+    for (int i = 1; i < number_of_threads; ++i)
+    {
+        size_t middle = i * chunk_size;
+        size_t end = (i == number_of_threads - 1) ? length : (i + 1) * chunk_size;
+        std::inplace_merge(array, array + middle - chunk_size, array + end);
+    }
 }
 
 extern "C" __declspec(dllexport) ICalculator* CreateCalculator()

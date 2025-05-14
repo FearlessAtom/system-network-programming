@@ -1,7 +1,20 @@
 #include <iostream>
 #include <random>
+#include <chrono>
 #include <windows.h>
 #include "./interface/interface.h"
+
+void output_array(int* array, int length)
+{
+    for (int i = 0; i < length; i++)
+    {
+        std::cout << array[i];
+
+        if (i + 1 != length) std::cout << " ";
+    }
+
+    std::cout << std::endl;
+}
 
 int get_random_integer(int min, int max)
 {
@@ -18,12 +31,10 @@ int main()
 {
     std::string calculator_library_path= "./calculator/calculator.dll";
 
-    int length = 10, min = -10, max = 10;
+    int length = 1000000, min = -10, max = 10;
     int* array = new int[length];
 
     for (int i = 0; i < length; i++) array[i] = get_random_integer(min, max);
-
-    for (int i = 0; i < length; i++) std::cout << array[i] << " ";
 
     HMODULE module = GetModuleHandle(calculator_library_path.c_str());
     if (!module) module = LoadLibrary(calculator_library_path.c_str());
@@ -42,16 +53,20 @@ int main()
         return 1;
     }
 
-    std::cout << std::endl;
-    
     ICalculator* calculator = create_calculator();
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     calculator->sort_array(array, length);
+
+    auto end = std::chrono::high_resolution_clock::now();
 
     delete calculator;
     FreeLibrary(module);
 
-    for (int i = 0; i < length; i++) std::cout << array[i] << " ";
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    std::cout << "Time taken: " << duration.count() / 1000.0 << " seconds" << std::endl;
 
     HMODULE hello_module = LoadLibrary("./hello_world.dll");
 
@@ -64,6 +79,8 @@ int main()
     hello_function hello = (hello_function)GetProcAddress(hello_module, NULL);
     
     hello();
+
+    FreeLibrary(hello_module);
 
     return 0;
 }
