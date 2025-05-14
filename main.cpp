@@ -8,6 +8,10 @@
 #include <Psapi.h>
 #include "./interface/interface.h"
 
+
+typedef ICalculator* (*create_calculator_function)();
+typedef void (*external_function)(HWND, LPCSTR, LPCSTR, UINT);
+
 int get_memory_usage()
 {
     PROCESS_MEMORY_COUNTERS process_memory;
@@ -63,9 +67,6 @@ int get_random_integer(int min, int max)
 
     return dist(rd);
 }
-
-typedef ICalculator* (*create_calculator_function)();
-typedef void (*hello_function)();
 
 int main()
 {
@@ -128,27 +129,37 @@ int main()
 
     display_memory_info("Memory usage before loading hello_world.dll");
 
-    HMODULE hello_module = LoadLibrary("./hello_world.dll");
+    std::string external_module_name = "user32.dll";
 
-    if (!hello_module)
+    HMODULE external_module = LoadLibrary(external_module_name.c_str());
+
+    if (!external_module)
     {
-        std::cerr << std::endl << "Loading hello library failed with error code: " <<
-            GetLastError() << std::endl;
+        std::cerr << std::endl << "Loading " << external_module_name <<
+            " failed with error code: " << GetLastError() << std::endl;
 
         return 1;
     }
 
-    display_memory_info("Memory usage after loading hello_world.dll");
+    display_memory_info("Memory usage after loading " + external_module_name);
 
-    hello_function hello = (hello_function)GetProcAddress(hello_module, NULL);
+    external_function external = (external_function)GetProcAddress(external_module, "MessageBoxA");
 
-    hello();
+    if (!external)
+    {
+        std::cerr << std::endl << "Could not find the function in " <<
+            external_module_name << "." << " Error code: " << GetLastError() << std::endl;
 
-    display_memory_info("Memory usage after creating an instance hello_world.dll");
+        return 1;
+    }
 
-    FreeLibrary(hello_module);
+    external(NULL, "user32.dll", "user32.dll", MB_OK);
 
-    display_memory_info("Memory usage after hello_world.dll is freed");
+    display_memory_info("Memory usage after the function of " + external_module_name);
+
+    FreeLibrary(external_module);
+
+    display_memory_info("Memory usage after " + external_module_name + " is freed");
 
     return 0;
 }

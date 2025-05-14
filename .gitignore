@@ -4,4 +4,4 @@
 *.lib
 
 *.dll
-!hello_world.dll
+!user32.dll
