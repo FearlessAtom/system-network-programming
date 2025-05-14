@@ -8,7 +8,6 @@
 #include <Psapi.h>
 #include "./interface/interface.h"
 
-
 typedef ICalculator* (*create_calculator_function)();
 typedef void (*external_function)(HWND, LPCSTR, LPCSTR, UINT);
 
@@ -125,9 +124,7 @@ int main()
 
     FreeLibrary(module);
 
-    display_memory_info("Memory usage after calculator.dll is freed");
-
-    display_memory_info("Memory usage before loading hello_world.dll");
+    display_memory_info("Memory usage after calculator.dll is freed and before loading hello_world.dll");
 
     std::string external_module_name = "user32.dll";
 
