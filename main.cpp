@@ -37,7 +37,7 @@ std::string get_human_readable_bytes(int bytes)
     return oss.str();
 }
 
-void display_memory_info(std::string message="")
+void display_memory_usage(std::string message="")
 {
     std::string default_message = "Memory usage";
 
@@ -69,20 +69,19 @@ int get_random_integer(int min, int max)
 
 int main()
 {
-    std::string calculator_library_path= "./calculator/calculator.dll";
+    std::string calculator_library_path = "./calculator/calculator.dll";
 
     int length = 1000000, min = -10, max = 10;
     int* array = new int[length];
 
     for (int i = 0; i < length; i++) array[i] = get_random_integer(min, max);
 
-    display_memory_info("Memory usage before loading calculator.dll");
+    display_memory_usage("Memory usage before loading calculator.dll");
 
     HMODULE module = GetModuleHandle(calculator_library_path.c_str());
     if (!module) module = LoadLibrary(calculator_library_path.c_str());
 
-    std::cout << "Memory usage after loading calculator.dll: " <<
-        get_human_readable_bytes(get_memory_usage()) << std::endl;;
+    display_memory_usage("Memory usage after loading calculator.dll");
 
     if (!module)
     {
@@ -105,7 +104,7 @@ int main()
 
     ICalculator* calculator = create_calculator();
 
-    display_memory_info("Memory usage after creating an instance of Calculator");
+    display_memory_usage("Memory usage after creating an instance of Calculator");
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -116,15 +115,15 @@ int main()
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "Time taken: " << duration.count() / 1000.0 << " seconds" << std::endl;
 
-    display_memory_info("Memory usage after sorting is complete");
+    display_memory_usage("Memory usage after sorting is complete");
 
     delete calculator;
 
-    display_memory_info("Memory usage after the Calculator instance is deleted");
+    display_memory_usage("Memory usage after the Calculator instance is deleted");
 
     FreeLibrary(module);
 
-    display_memory_info("Memory usage after calculator.dll is freed and before loading hello_world.dll");
+    display_memory_usage("Memory usage after calculator.dll is freed and before loading hello_world.dll");
 
     std::string external_module_name = "user32.dll";
 
@@ -138,7 +137,7 @@ int main()
         return 1;
     }
 
-    display_memory_info("Memory usage after loading " + external_module_name);
+    display_memory_usage("Memory usage after loading " + external_module_name);
 
     external_function external = (external_function)GetProcAddress(external_module, "MessageBoxA");
 
@@ -152,11 +151,11 @@ int main()
 
     external(NULL, "user32.dll", "user32.dll", MB_OK);
 
-    display_memory_info("Memory usage after the function of " + external_module_name);
+    display_memory_usage("Memory usage after the function of " + external_module_name);
 
     FreeLibrary(external_module);
 
-    display_memory_info("Memory usage after " + external_module_name + " is freed");
+    display_memory_usage("Memory usage after " + external_module_name + " is freed");
 
     return 0;
 }
