@@ -8,7 +8,7 @@ public:
     Calculator();
     ~Calculator();
     static void sort_chunk(int* array, size_t start, size_t end);
-    void sort_array(int* array, int length);
+    void sort_array(int* array, int length, int number_of_threads);
     static int compare(const void* a, const void* b);
 };
 

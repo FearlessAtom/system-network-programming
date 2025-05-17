@@ -71,7 +71,7 @@ int main()
 {
     std::string calculator_library_path = "./calculator/calculator.dll";
 
-    int length = 1000000, min = -10, max = 10;
+    int length = 1000000, min = -10, max = 10, number_of_threads = 5;
     int* array = new int[length];
 
     for (int i = 0; i < length; i++) array[i] = get_random_integer(min, max);
@@ -108,7 +108,7 @@ int main()
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    calculator->sort_array(array, length);
+    calculator->sort_array(array, length, number_of_threads);
 
     auto end = std::chrono::high_resolution_clock::now();
 

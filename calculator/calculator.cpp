@@ -24,11 +24,9 @@ int Calculator::compare(const void* a, const void* b)
     return (*((const int*)a) - *((const int*)b));
 }
 
-void Calculator::sort_array(int* array, int length)
+void Calculator::sort_array(int* array, int length, int number_of_threads)
 {
     std::cout << "Sorting array..." << std::endl;
-
-    int number_of_threads = std::thread::hardware_concurrency();
 
     std::vector<std::thread> threads;
     size_t chunk_size = length / number_of_threads;
