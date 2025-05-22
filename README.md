@@ -1,1 +1,1 @@
-[main branch](https://git.ztu.edu.ua/ipz231_soa/system-network-programming)
+[main branch](https://github.com/fearlessatom/system-network-programming)
