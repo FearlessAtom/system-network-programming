@@ -143,26 +143,6 @@ int main()
         return 1;
     }
 
-    char hostName[256];
-
-    if (gethostname(hostName, sizeof(hostName)) == SOCKET_ERROR)
-    {
-        std::cerr << "Failed to get hostname! Error: " << WSAGetLastError() << std::endl;
-        closesocket(sniffer);
-        WSACleanup();
-        return 1;
-    }
-
-    struct hostent* localHost = gethostbyname(hostName);
-
-    if (!localHost)
-    {
-        std::cerr << "Failed to get local host! Error: " << WSAGetLastError() << std::endl;
-        closesocket(sniffer);
-        WSACleanup();
-        return 1;
-    }
-
     sockaddr_in socketAddr = {};
 
     socketAddr.sin_family = AF_INET;
